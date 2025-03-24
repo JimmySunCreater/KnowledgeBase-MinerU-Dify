@@ -1,0 +1,17 @@
+[Unit]
+Description=MinerU API Service
+After=network.target
+
+[Service]
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/mineru_service
+ExecStart=/opt/mineru_service/start_mineru_api.sh
+Restart=always
+RestartSec=3
+Type=simple
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
