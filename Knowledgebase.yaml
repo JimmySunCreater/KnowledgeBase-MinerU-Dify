@@ -1,0 +1,706 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Metadata:
+  Generator: "former2"
+  Description: "Rexroth Knowledge Base Infrastructure with Self-hosted Image Server"
+
+Resources:
+
+  # VPC and Networking Resources
+
+  RexrothVPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: "Name"
+          Value: "Rexroth-VPC"
+
+  RexrothInternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+        - Key: "Name"
+          Value: "Rexroth-IGW"
+
+  RexrothVPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref RexrothVPC
+      InternetGatewayId: !Ref RexrothInternetGateway
+
+  RexrothPublicSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref RexrothVPC
+      AvailabilityZone: "cn-north-1b"
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: "Name"
+          Value: "Rexroth-Public-Subnet"
+
+  RexrothPublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref RexrothVPC
+      Tags:
+        - Key: "Name"
+          Value: "Rexroth-Public-RT"
+
+  RexrothPublicRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: "RexrothVPCGatewayAttachment"
+    Properties:
+      RouteTableId: !Ref RexrothPublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref RexrothInternetGateway
+
+  RexrothPublicSubnetRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref RexrothPublicSubnet
+      RouteTableId: !Ref RexrothPublicRouteTable
+
+  # IAM Roles and Instance Profiles
+
+  LambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: "S3Access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs"
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs/*"
+        - PolicyName: "NetworkAccess" # 允许 Lambda 进行网络调用
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "ec2:CreateNetworkInterface"
+                  - "ec2:DescribeNetworkInterfaces"
+                  - "ec2:DeleteNetworkInterface"
+                Resource: "*"
+
+  DifyRexrothRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      RoleName: "Dify-Rexroth-Role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Policies:
+        - PolicyName: "DifyRexrothPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs"
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs/*"
+      Description: "Role for Dify Rexroth EC2 instance"
+
+  MinerURexrothRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      RoleName: "MinerU-Rexroth-Role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Policies:
+        - PolicyName: "S3Access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs"
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs/*"
+      Description: "Role for MinerU Rexroth EC2 instance"
+
+  ImageServerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      RoleName: "Rexroth-ImageServer-Role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - "arn:aws-cn:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Policies:
+        - PolicyName: "S3ImageAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                  - "s3:PutObject"
+                  - "s3:Sync"
+                Resource:
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs"
+                  - "arn:aws-cn:s3:::rexroth-knowledgebase-docs/*"
+      Description: "Role for Image Server EC2 instance"
+
+  DifyRexrothInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      InstanceProfileName: "Dify-Rexroth-InstanceProfile"
+      Roles:
+        - !Ref DifyRexrothRole
+
+  MinerURexrothInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      InstanceProfileName: "MinerU-Rexroth-InstanceProfile"
+      Roles:
+        - !Ref MinerURexrothRole
+
+  ImageServerInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      InstanceProfileName: "Rexroth-ImageServer-Profile"
+      Roles:
+        - !Ref ImageServerRole
+
+  # Security Groups
+
+  EC2SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "dify-limit-ip"
+      GroupName: "dify-limit-ip"
+      VpcId: !Ref RexrothVPC
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 22
+          IpProtocol: "tcp"
+          ToPort: 22
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 8081
+          IpProtocol: "tcp"
+          ToPort: 8081
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 80
+          IpProtocol: "tcp"
+          ToPort: 80
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+
+  EC2SecurityGroup2:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "MinerU GPU Security Group"
+      GroupName: "minerU-security-group"
+      VpcId: !Ref RexrothVPC
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 22
+          IpProtocol: "tcp"
+          ToPort: 22
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 5000
+          IpProtocol: "tcp"
+          ToPort: 5000
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+
+  ImageServerSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Security Group for Image Server"
+      GroupName: "image-server-sg"
+      VpcId: !Ref RexrothVPC
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref EC2SecurityGroup
+          FromPort: 80
+          IpProtocol: "tcp"
+          ToPort: 80
+          Description: "Allow HTTP from Dify server"
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 22
+          IpProtocol: "tcp"
+          ToPort: 22
+          Description: "SSH access"
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+
+  # S3 Bucket
+
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "rexroth-knowledgebase-docs"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "AES256"
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: "BucketOwnerEnforced"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # Lambda Functions
+
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    DependsOn: [ImageServerEC2]
+    Properties:
+      Description: "处理 Markdown 文件的 Lambda 函数"
+      FunctionName: "MinerU_md_file_process"
+      Handler: "index.lambda_handler"
+      Architectures:
+        - "x86_64"
+      Environment:
+        Variables:
+          IMAGE_SERVER_IP: !GetAtt ImageServerEC2.PublicIp
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import re
+          import os
+          import urllib.parse
+          from pathlib import Path
+
+          s3_client = boto3.client('s3')
+          NGINX_DOMAIN = os.environ['IMAGE_SERVER_IP']
+
+          def lambda_handler(event, context):
+              # 获取触发事件的 S3 桶和对象键
+              bucket = event['Records'][0]['s3']['bucket']['name']
+              key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
+              
+              # 检查是否为 .md 文件
+              if not key.lower().endswith('.md'):
+                  print(f"跳过非 Markdown 文件: {key}")
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps('非 Markdown 文件，已跳过处理')
+                  }
+              
+              try:
+                  # 从 S3 获取原始 Markdown 内容
+                  response = s3_client.get_object(Bucket=bucket, Key=key)
+                  content = response['Body'].read().decode('utf-8')
+                  
+                  # 获取文件夹路径
+                  folder_path = os.path.dirname(key)
+                  
+                  # 使用正则表达式查找并替换图片引用 - 完全替换为纯 URL
+                  pattern = r'!\[.*?\]\(images/(.*?)\)'
+                  
+                  def replace_image_url(match):
+                      # 只需要图片名称
+                      image_name = match.group(1)
+                      
+                      # 构建 CloudFront URL，不保留 Markdown 语法
+                      cloudfront_url = f"https://{NGINX_DOMAIN}/{folder_path}/images/{image_name}"
+                      
+                      return cloudfront_url
+                  
+                  # 应用替换
+                  modified_content = re.sub(pattern, replace_image_url, content)
+                  
+                  # 如果内容有更改，上传回 S3
+                  if content != modified_content:
+                      s3_client.put_object(
+                          Bucket=bucket,
+                          Key=key,
+                          Body=modified_content,
+                          ContentType='text/markdown'
+                      )
+                      print(f"成功更新文件: {key}")
+                  else:
+                      print(f"文件没有需要替换的图片引用: {key}")
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps('处理成功')
+                  }
+              
+              except Exception as e:
+                  print(f"发生错误: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps(f'处理过程中发生错误: {str(e)}')
+                  }
+      MemorySize: 128
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: "python3.10"
+      Timeout: 30
+      TracingConfig:
+        Mode: "PassThrough"
+      EphemeralStorage:
+        Size: 512
+
+  LambdaFunction2:
+    Type: "AWS::Lambda::Function"
+    DependsOn: [MinerURexrothEC2]
+    Properties:
+      Description: "处理上传文档的 Lambda 函数"
+      FunctionName: "MinerUDocumentProcessor"
+      Handler: "index.lambda_handler"
+      Architectures:
+        - "x86_64"
+      Environment:
+        Variables:
+          MINERU_EC2_IP: !GetAtt MinerURexrothEC2.PublicIp
+      Code:
+        ZipFile: |
+          import json
+          import urllib.parse
+          import boto3
+          import urllib3
+          import os
+
+          # 支持的文件扩展名列表
+          SUPPORTED_EXTENSIONS = ['.pdf', '.jpg', '.png', '.doc', '.docx', '.ppt', '.pptx']
+
+          def lambda_handler(event, context):
+              # 从事件中获取桶和键
+              bucket = event['Records'][0]['s3']['bucket']['name']
+              key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
+              
+              # 检查文件是否在input目录
+              if not key.startswith('input/'):
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps('跳过非Input目录文件')
+                  }
+              
+              # 检查文件扩展名是否支持
+              file_extension = os.path.splitext(key)[1].lower()
+              if file_extension not in SUPPORTED_EXTENSIONS:
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps(f'跳过不支持的文件类型: {file_extension}')
+                  }
+              
+              # 调用EC2 API
+              ec2_api_url = f"http://{os.environ['MINERU_EC2_IP']}:5000/convert"
+              
+              http = urllib3.PoolManager()
+              payload = {
+                  "bucket": bucket,
+                  "key": key,
+                  "file_type": file_extension[1:]  # 去掉前面的点，传递类型
+              }
+              
+              try:
+                  response = http.request(
+                      'POST',
+                      ec2_api_url,
+                      headers={'Content-Type': 'application/json'},
+                      body=json.dumps(payload).encode('utf-8'),
+                      timeout=10.0  # 设置10秒超时
+                  )
+                  
+                  if response.status == 200:
+                      return {
+                          'statusCode': 200,
+                          'body': json.dumps(f'文件处理已成功启动: {key}')
+                      }
+                  else:
+                      return {
+                          'statusCode': 500,
+                          'body': json.dumps(f'启动文件处理失败: {response.data.decode("utf-8")}')
+                      }
+              except Exception as e:
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps(f'调用EC2 API出错: {str(e)}')
+                  }
+      MemorySize: 128
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: "python3.10" # 修改为 python3.10，因为 python3.12 可能在中国区不可用
+      Timeout: 30
+      TracingConfig:
+        Mode: "PassThrough"
+      EphemeralStorage:
+        Size: 512
+
+  # Lambda Permissions
+
+  LambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    DependsOn: LambdaFunction
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: "s3.amazonaws.com"
+      SourceArn: !GetAtt S3Bucket.Arn
+
+  LambdaPermission2:
+    Type: "AWS::Lambda::Permission"
+    DependsOn: LambdaFunction2
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaFunction2.Arn
+      Principal: "s3.amazonaws.com"
+      SourceArn: !GetAtt S3Bucket.Arn
+      
+  # S3 Bucket Notification Configuration - 分两步创建以避免循环依赖
+  S3BucketNotification:
+    Type: "AWS::S3::BucketPolicy"
+    DependsOn: [LambdaFunction, LambdaFunction2, LambdaPermission, LambdaPermission2, ImageServerEC2, MinerURexrothEC2]
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal: { Service: "s3.amazonaws.com" }
+            Action: "s3:PutObject"
+            Resource: !Sub "arn:aws-cn:s3:::${S3Bucket}/*"
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref "AWS::AccountId"
+
+  # EC2 Instances
+
+  DifyRexrothEC2:
+    Type: "AWS::EC2::Instance"
+    DependsOn: [DifyRexrothInstanceProfile, EC2SecurityGroup]
+    Properties:
+      ImageId: "ami-0dea1c14fcebf6c9e"
+      InstanceType: "t3a.xlarge"
+      KeyName: "GenAICN"
+      AvailabilityZone: !GetAtt RexrothPublicSubnet.AvailabilityZone
+      Tenancy: "default"
+      SubnetId: !Ref RexrothPublicSubnet
+      EbsOptimized: true
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      SourceDestCheck: true
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            Encrypted: false
+            VolumeSize: 50
+            VolumeType: "gp3"
+            DeleteOnTermination: true
+      IamInstanceProfile: !Ref DifyRexrothInstanceProfile
+      Tags:
+        - Key: "Name"
+          Value: "Dify-Rexroth-EC2"
+        - Key: "Patch Group"
+          Value: "DEV"
+      HibernationOptions:
+        Configured: false
+      CpuOptions:
+        CoreCount: 2
+        ThreadsPerCore: 2
+      EnclaveOptions:
+        Enabled: false
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # 更新系统
+          sudo yum update -y
+          
+          # 安装必要工具，避免安装 curl
+          sudo yum install -y wget git
+
+          # 创建工作目录
+          cd /home/ec2-user
+          
+          # 下载 difyinstall.sh 脚本
+          wget https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/7fe4f3010e23d7aeb937371a449dae6ca608058c/difyinstall.sh
+
+          # 添加执行权限
+          chmod +x difyinstall.sh
+
+          # 执行安装脚本
+          sudo bash difyinstall.sh
+
+  MinerURexrothEC2:
+    Type: "AWS::EC2::Instance"
+    DependsOn: [MinerURexrothInstanceProfile, EC2SecurityGroup2]
+    Properties:
+      ImageId: "ami-0dea1c14fcebf6c9e"
+      InstanceType: "t3a.xlarge"
+      KeyName: "GenAICN"
+      AvailabilityZone: !GetAtt RexrothPublicSubnet.AvailabilityZone
+      Tenancy: "default"
+      SubnetId: !Ref RexrothPublicSubnet
+      EbsOptimized: true
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup2
+      SourceDestCheck: true
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            Encrypted: false
+            VolumeSize: 100
+            VolumeType: "gp3"
+            DeleteOnTermination: true
+      IamInstanceProfile: !Ref MinerURexrothInstanceProfile
+      Tags:
+        - Key: "Patch Group"
+          Value: "DEV"
+        - Key: "Name"
+          Value: "MinerU-Rexroth-EC2"
+      HibernationOptions:
+        Configured: false
+      CpuOptions:
+        CoreCount: 2
+        ThreadsPerCore: 2
+      EnclaveOptions:
+        Enabled: false
+
+  ImageServerEC2:
+    Type: "AWS::EC2::Instance"
+    DependsOn: [ImageServerInstanceProfile, ImageServerSecurityGroup]
+    Properties:
+      ImageId: "ami-0dea1c14fcebf6c9e"
+      InstanceType: "t3.micro"
+      KeyName: "GenAICN"
+      AvailabilityZone: !GetAtt RexrothPublicSubnet.AvailabilityZone
+      Tenancy: "default"
+      SubnetId: !Ref RexrothPublicSubnet
+      EbsOptimized: true
+      SecurityGroupIds:
+        - !Ref ImageServerSecurityGroup
+      SourceDestCheck: true
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            Encrypted: false
+            VolumeSize: 50
+            VolumeType: "gp3"
+            DeleteOnTermination: true
+      IamInstanceProfile: !Ref ImageServerInstanceProfile
+      Tags:
+        - Key: "Patch Group"
+          Value: "DEV"
+        - Key: "Name"
+          Value: "ImageServer-Rexroth-EC2"
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # 安装Nginx和必要工具
+          sudo yum update -y
+          sudo yum install -y nginx awscli
+          
+          # 启动Nginx服务并设置为开机自启
+          sudo systemctl start nginx
+          sudo systemctl enable nginx
+          
+          # 创建output目录
+          sudo mkdir -p /usr/share/nginx/html/output
+          
+          # 配置Nginx作为文件服务器
+          cat > /etc/nginx/conf.d/server.conf <<EOF
+          server {
+              listen 80 default_server;
+              server_name _;
+              
+              # output目录配置
+              location / {
+                  root /usr/share/nginx/html/output;
+                  autoindex on;
+                  autoindex_exact_size off;
+                  autoindex_localtime on;
+                  add_header 'Access-Control-Allow-Origin' '*';
+                  add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+                  add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization';
+              }
+          }
+          EOF
+          
+          # 创建同步脚本
+          cat > /usr/local/bin/sync-files.sh <<EOF
+          #!/bin/bash
+          # 同步output目录
+          aws s3 sync s3://rexroth-knowledgebase-docs/output/ /usr/share/nginx/html/output/
+          
+          # 设置正确的权限
+          sudo chown -R nginx:nginx /usr/share/nginx/html/
+          sudo chmod -R 755 /usr/share/nginx/html/
+          EOF
+          
+          # 添加执行权限
+          sudo chmod +x /usr/local/bin/sync-files.sh
+          
+          # 配置定时任务同步文件
+          (crontab -l 2>/dev/null || echo "") | { cat; echo "*/5 * * * * /usr/local/bin/sync-files.sh"; } | crontab -
+          
+          # 重启Nginx以应用配置
+          sudo systemctl restart nginx
+          
+          # 首次同步
+          sudo /usr/local/bin/sync-files.sh
+
+Outputs:
+  DifyRexrothEC2PublicIP:
+    Description: "Public IP of the Dify Rexroth EC2 instance"
+    Value: !GetAtt DifyRexrothEC2.PublicIp
+  
+  MinerURexrothEC2PublicIP:
+    Description: "Public IP of the MinerU Rexroth EC2 instance"
+    Value: !GetAtt MinerURexrothEC2.PublicIp
+  
+  ImageServerEC2PublicIP:
+    Description: "Public IP of the Image Server EC2 instance"
+    Value: !GetAtt ImageServerEC2.PublicIp
