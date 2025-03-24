@@ -573,9 +573,9 @@ Resources:
           cd /home/ec2-user
           
           # 尝试从 GitHub 下载 difyinstall.sh 脚本，如果失败则从备用源下载
-          if ! wget --timeout=30 https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/7fe4f3010e23d7aeb937371a449dae6ca608058c/difyinstall.sh; then
+          if ! wget --timeout=20 --tries=2 --waitretry=5 https://github.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/blob/main/difyinstall.sh; then
             echo "从 GitHub 下载失败，尝试从备用源下载..."
-            if ! wget --timeout=30 https://d3d2iaoi1ibop8.cloudfront.net/difyinstall.sh; then
+            if ! wget --timeout=20 https://d3d2iaoi1ibop8.cloudfront.net/difyinstall.sh; then
               echo "从备用源下载失败，请检查网络连接或手动下载脚本。"
               exit 1
             fi
