@@ -517,7 +517,7 @@ Resources:
               StringEquals:
                 "aws:SourceAccount": !Ref "AWS::AccountId"
 
-  # EC2 Instances
+  # EC2 Instances - 修复后的代码
 
   DifyRexrothEC2:
     Type: "AWS::EC2::Instance"
@@ -534,10 +534,10 @@ Resources:
         - !Ref EC2SecurityGroup
       SourceDestCheck: true
       BlockDeviceMappings:
-        - DeviceName: "/dev/xvda"
+        - DeviceName: "/dev/xvda"  # 修正: 使用正确的根卷设备名
           Ebs:
             Encrypted: false
-            VolumeSize: 50
+            VolumeSize: 80
             VolumeType: "gp3"
             DeleteOnTermination: true
       IamInstanceProfile: !Ref DifyRexrothInstanceProfile
@@ -556,6 +556,13 @@ Resources:
       UserData:
         Fn::Base64: |
           #!/bin/bash
+          # 确保根文件系统扩展到整个卷大小
+          sudo growpart /dev/xvda 1
+          sudo xfs_growfs / || sudo resize2fs /dev/xvda1
+          
+          # 记录磁盘空间信息以便验证
+          df -h > /tmp/disk_space_after_resize.txt
+          
           # 更新系统
           sudo yum update -y
           
@@ -565,8 +572,14 @@ Resources:
           # 创建工作目录
           cd /home/ec2-user
           
-          # 下载 difyinstall.sh 脚本
-          wget https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/7fe4f3010e23d7aeb937371a449dae6ca608058c/difyinstall.sh
+          # 尝试从 GitHub 下载 difyinstall.sh 脚本，如果失败则从备用源下载
+          if ! wget --timeout=30 https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/7fe4f3010e23d7aeb937371a449dae6ca608058c/difyinstall.sh; then
+            echo "从 GitHub 下载失败，尝试从备用源下载..."
+            if ! wget --timeout=30 https://d3d2iaoi1ibop8.cloudfront.net/difyinstall.sh; then
+              echo "从备用源下载失败，请检查网络连接或手动下载脚本。"
+              exit 1
+            fi
+          fi
 
           # 添加执行权限
           chmod +x difyinstall.sh
@@ -589,7 +602,7 @@ Resources:
         - !Ref EC2SecurityGroup2
       SourceDestCheck: true
       BlockDeviceMappings:
-        - DeviceName: "/dev/sda1"
+        - DeviceName: "/dev/xvda"  # 修正: 使用正确的根卷设备名
           Ebs:
             Encrypted: false
             VolumeSize: 100
@@ -608,6 +621,15 @@ Resources:
         ThreadsPerCore: 2
       EnclaveOptions:
         Enabled: false
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # 确保根文件系统扩展到整个卷大小
+          sudo growpart /dev/xvda 1
+          sudo xfs_growfs / || sudo resize2fs /dev/xvda1
+          
+          # 记录磁盘空间信息以便验证
+          df -h > /tmp/disk_space_after_resize.txt
 
   ImageServerEC2:
     Type: "AWS::EC2::Instance"
@@ -624,7 +646,7 @@ Resources:
         - !Ref ImageServerSecurityGroup
       SourceDestCheck: true
       BlockDeviceMappings:
-        - DeviceName: "/dev/xvda"
+        - DeviceName: "/dev/xvda"  # 修正: 使用正确的根卷设备名
           Ebs:
             Encrypted: false
             VolumeSize: 50
@@ -639,6 +661,13 @@ Resources:
       UserData:
         Fn::Base64: |
           #!/bin/bash
+          # 确保根文件系统扩展到整个卷大小
+          sudo growpart /dev/xvda 1
+          sudo xfs_growfs / || sudo resize2fs /dev/xvda1
+          
+          # 记录磁盘空间信息以便验证
+          df -h > /tmp/disk_space_after_resize.txt
+          
           # 安装Nginx和必要工具
           sudo yum update -y
           sudo yum install -y nginx awscli
