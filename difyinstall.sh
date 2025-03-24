@@ -63,7 +63,7 @@ install_base_ubuntu() {
 improve_github_access() {
     print_step "添加GitHub520 hosts以改善GitHub访问"
     print_info "下载GitHub520 hosts文件..."
-    curl https://raw.hellogithub.com/hosts | sudo tee -a /etc/hosts
+    sudo curl https://raw.hellogithub.com/hosts | sudo tee -a /etc/hosts
     if [ $? -eq 0 ]; then
         print_info "GitHub hosts添加成功"
     else
@@ -160,17 +160,78 @@ check_docker_status() {
 install_dify() {
     print_step "安装Dify"
     
-    # 克隆Dify项目
-    print_info "克隆Dify项目..."
-    git clone https://github.com/langgenius/dify.git
+    # 清理可能存在的旧文件
+    rm -rf dify dify-main.zip dify-main
+
+    # 尝试克隆Dify项目
+    print_info "尝试从GitHub克隆Dify项目(超时时间30秒，最低速度100KB/s)..."
+    
+    # 使用进度监控克隆
+    if timeout 30 git clone --progress https://github.com/langgenius/dify.git 2>&1 | tee /tmp/git_progress | \
+       awk '
+         BEGIN { slow_count = 0 }
+         /Receiving objects:/ {
+           if ($3 ~ /%/) {
+             speed = $(NF-1)
+             unit = $NF
+             if (unit == "KiB/s" && speed < 100) {
+               slow_count++
+               if (slow_count >= 3) {
+                 print "Speed too slow" > "/dev/stderr"
+                 exit 1
+               }
+             } else {
+               slow_count = 0
+             }
+           }
+         }
+       ' && wait $! && [ -d "dify" ] && [ -d "dify/docker" ]; then
+        print_info "GitHub克隆成功"
+    else
+        print_warning "GitHub克隆失败或目录结构不完整，尝试从备用源下载..."
+        
+        # 清理可能存在的不完整文件
+        rm -rf dify
+        
+        # 下载zip文件
+        print_info "从备用源下载Dify..."
+        if wget https://d3d2iaoi1ibop8.cloudfront.net/dify-main.zip && [ -f "dify-main.zip" ]; then
+            print_info "下载成功，正在解压..."
+            if unzip dify-main.zip && [ -d "dify-main" ]; then
+                mv dify-main dify
+                rm dify-main.zip
+                print_info "解压完成"
+            else
+                print_error "解压失败，安装无法继续"
+                rm -f dify-main.zip
+                exit 1
+            fi
+        else
+            print_error "备用源下载失败，安装无法继续"
+            rm -f dify-main.zip
+            exit 1
+        fi
+    fi
+
+    # 验证必要的目录结构
+    if [ ! -d "dify" ] || [ ! -d "dify/docker" ]; then
+        print_error "Dify目录结构不完整，安装失败"
+        exit 1
+    fi
+
     cd dify/docker || {
-        print_error "无法进入Dify项目目录，请检查Git克隆是否成功"
+        print_error "无法进入Dify项目目录，请检查安装是否成功"
         exit 1
     }
 
     # 复制环境配置文件
     print_info "配置Dify环境..."
-    cp .env.example .env
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+    else
+        print_error "环境配置模板文件不存在"
+        exit 1
+    fi
     
     # 启动服务
     print_info "启动Dify服务..."
