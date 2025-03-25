@@ -21,4 +21,4 @@ conda activate mineru
 
 # 运行API服务
 cd /opt/mineru_service
-sudo python3 lambda_api.py
+python3 lambda_api.py
