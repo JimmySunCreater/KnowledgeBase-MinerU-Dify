@@ -29,6 +29,7 @@ app = Flask(__name__)
 
 def process_file_in_mineru_env(input_bucket, input_key, file_type):
     """使用命令行方式处理文件"""
+    temp_dir = None
     try:
         # 创建临时目录
         temp_dir = f"/tmp/mineru_temp_{int(time.time())}"
@@ -39,28 +40,74 @@ def process_file_in_mineru_env(input_bucket, input_key, file_type):
         logger.info(f"解码后的键名: {decoded_key}")
         
         # S3客户端
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client('s3', region_name='cn-north-1')
         
         # 为文件创建安全的本地文件名（替换空格为下划线）
         original_filename = os.path.basename(decoded_key)
         safe_filename = original_filename.replace(' ', '_')
         local_file_path = os.path.join(temp_dir, safe_filename)
         
-        logger.info(f"下载文件: s3://{input_bucket}/{decoded_key} -> {local_file_path}")
-        s3_client.download_file(input_bucket, decoded_key, local_file_path)
+        # 检查文件是否存在
+        try:
+            # 首先尝试使用原始键名
+            response = s3_client.head_object(Bucket=input_bucket, Key=decoded_key)
+            file_size = response['ContentLength']
+            if file_size > 100 * 1024 * 1024:  # 100MB限制
+                logger.error(f"文件大小超过限制: {file_size} bytes")
+                return False
+            
+            logger.info(f"下载文件: s3://{input_bucket}/{decoded_key} -> {local_file_path}")
+            s3_client.download_file(input_bucket, decoded_key, local_file_path)
+        except Exception as e:
+            logger.error(f"使用原始键名下载失败: {str(e)}")
+            # 尝试使用URL编码的键名
+            encoded_key = urllib.parse.quote(decoded_key, safe='/')
+            logger.info(f"尝试使用URL编码的键名: {encoded_key}")
+            try:
+                response = s3_client.head_object(Bucket=input_bucket, Key=encoded_key)
+                file_size = response['ContentLength']
+                if file_size > 100 * 1024 * 1024:  # 100MB限制
+                    logger.error(f"文件大小超过限制: {file_size} bytes")
+                    return False
+                
+                logger.info(f"使用URL编码的键名下载文件: s3://{input_bucket}/{encoded_key} -> {local_file_path}")
+                s3_client.download_file(input_bucket, encoded_key, local_file_path)
+            except Exception as e:
+                logger.error(f"使用URL编码的键名下载也失败: {str(e)}")
+                return False
         
         # 定义输出目录
         output_dir = os.path.join(temp_dir, "output")
         os.makedirs(output_dir, exist_ok=True)
         
-        # 执行magic-pdf命令，使用正确的参数名 --output-dir 而不是 --output
-        cmd = f"source ~/miniconda3/etc/profile.d/conda.sh && conda activate mineru && magic-pdf -p '{local_file_path}' -o '{output_dir}' -m auto"
-        logger.info(f"执行命令: {cmd}")
+        # 使用正确的conda路径
+        conda_base = os.path.expanduser('~/miniconda')
+        conda_activate_cmd = f"source {conda_base}/etc/profile.d/conda.sh && conda activate mineru"
+        magic_pdf_cmd = ["magic-pdf", "-p", local_file_path, "-o", output_dir, "-m", "auto"]
         
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        if result.returncode != 0:
-            logger.error(f"命令执行失败: {result.stderr}")
-            logger.error(f"命令输出: {result.stdout}")
+        # 使用shell=True执行conda激活，然后执行magic-pdf命令
+        full_cmd = f"{conda_activate_cmd} && {' '.join(magic_pdf_cmd)}"
+        logger.info(f"执行命令: {full_cmd}")
+        
+        # 添加环境变量
+        env = os.environ.copy()
+        env['PATH'] = f"{conda_base}/bin:{env['PATH']}"
+        
+        process = subprocess.Popen(
+            full_cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env
+        )
+        
+        stdout, stderr = process.communicate()
+        
+        if process.returncode != 0:
+            logger.error(f"命令执行失败，返回码: {process.returncode}")
+            logger.error(f"错误输出: {stderr}")
+            logger.error(f"标准输出: {stdout}")
             return False
         
         logger.info(f"命令执行成功")
@@ -98,15 +145,21 @@ def process_file_in_mineru_env(input_bucket, input_key, file_type):
             logger.error(f"确保images目录存在时出错: {str(e)}")
             # 不阻止处理流程继续
         
-        # 清理临时文件
-        shutil.rmtree(temp_dir)
-        logger.info(f"处理完成，已清理临时文件")
+        logger.info(f"处理完成")
         return True
         
     except Exception as e:
         logger.error(f"处理出错: {str(e)}")
         logger.error(traceback.format_exc())
         return False
+    finally:
+        # 确保清理临时目录
+        if temp_dir and os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+                logger.info(f"已清理临时目录: {temp_dir}")
+            except Exception as e:
+                logger.error(f"清理临时目录时出错: {str(e)}")
 
 @app.route('/convert', methods=['POST'])
 def convert_file():
