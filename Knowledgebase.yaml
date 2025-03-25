@@ -354,8 +354,10 @@ Resources:
                       # 只需要图片名称
                       image_name = match.group(1)
                       
-                      # 构建 CloudFront URL，不保留 Markdown 语法
-                      cloudfront_url = f"https://{NGINX_DOMAIN}/{folder_path}/images/{image_name}"
+                      # 构建 URL，不需要加 output 路径，因为 Nginx 已经将 root 指向了 output 目录
+                      # 对路径进行 URL 编码，但保留斜杠
+                      encoded_path = urllib.parse.quote(folder_path, safe='/')
+                      cloudfront_url = f"http://{NGINX_DOMAIN}/{encoded_path}/images/{image_name}"
                       
                       return cloudfront_url
                   
@@ -630,31 +632,45 @@ Resources:
           # 确保根文件系统扩展到整个卷大小
           sudo growpart /dev/xvda 1
           sudo xfs_growfs / || sudo resize2fs /dev/xvda1
-          
+
           # 记录磁盘空间信息以便验证
           df -h > /tmp/disk_space_after_resize.txt
-          
+
           # 安装基本工具
-          sudo yum update -y
-          sudo yum install -y wget git
-          
+          if command -v apt-get &> /dev/null; then
+              # Ubuntu系统
+              sudo apt-get update -y
+              sudo apt-get install -y wget git
+          else
+              # Amazon Linux/CentOS系统
+              sudo yum update -y
+              sudo yum install -y wget git
+          fi
+
           # 创建日志目录
-          mkdir -p /home/ec2-user/logs
-          
+          sudo mkdir -p /home/ec2-user/logs
+          sudo chown -R ec2-user:ec2-user /home/ec2-user/logs
+          sudo chmod 755 /home/ec2-user/logs
+
+          # 创建并设置日志文件权限
+          touch /home/ec2-user/logs/mineru_install.log
+          sudo chown ec2-user:ec2-user /home/ec2-user/logs/mineru_install.log
+          sudo chmod 644 /home/ec2-user/logs/mineru_install.log
+
           # 下载MinerU安装脚本
           cd /home/ec2-user
           if ! wget --timeout=30 --tries=3 --waitretry=5 https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/main/mineruinstall.sh; then
-            echo "从GitHub下载MinerU安装脚本失败，尝试从备用源下载..." | tee -a /home/ec2-user/logs/install.log
-            if ! wget --timeout=30 --tries=3 --waitretry=5 https://d3d2iaoi1ibop8.cloudfront.net/mineruinstall.sh; then
-              echo "从备用源下载MinerU安装脚本失败，请检查网络连接或手动下载脚本。" | tee -a /home/ec2-user/logs/install.log
-              exit 1
-            fi
+              echo "从GitHub下载MinerU安装脚本失败，尝试从备用源下载..." | tee -a /home/ec2-user/logs/install.log
+              if ! wget --timeout=30 --tries=3 --waitretry=5 https://d3d2iaoi1ibop8.cloudfront.net/mineruinstall.sh; then
+                  echo "从备用源下载MinerU安装脚本失败，请检查网络连接或手动下载脚本。" | tee -a /home/ec2-user/logs/install.log
+                  exit 1
+              fi
           fi
-          
+
           # 添加执行权限
-          chmod +x mineruinstall.sh
-          
-          # 执行MinerU安装脚本（不使用sudo）
+          sudo chmod +x mineruinstall.sh
+
+          # 执行MinerU安装脚本
           bash mineruinstall.sh | tee -a /home/ec2-user/logs/mineru_install.log
 
   ImageServerEC2:
@@ -694,9 +710,13 @@ Resources:
           # 记录磁盘空间信息以便验证
           df -h > /tmp/disk_space_after_resize.txt
           
-          # 安装Nginx和必要工具
+          # 安装Nginx、AWS CLI和cronie
           sudo yum update -y
-          sudo yum install -y nginx awscli
+          sudo yum install -y nginx awscli cronie
+          
+          # 启动并启用cron服务
+          sudo systemctl start crond
+          sudo systemctl enable crond
           
           # 启动Nginx服务并设置为开机自启
           sudo systemctl start nginx
@@ -728,7 +748,7 @@ Resources:
           cat > /usr/local/bin/sync-files.sh <<EOF
           #!/bin/bash
           # 同步output目录
-          aws s3 sync s3://rexroth-knowledgebase-docs/output/ /usr/share/nginx/html/output/
+          sudo aws s3 sync s3://rexroth-knowledgebase-docs/output/ /usr/share/nginx/html/output/
           
           # 设置正确的权限
           sudo chown -R nginx:nginx /usr/share/nginx/html/

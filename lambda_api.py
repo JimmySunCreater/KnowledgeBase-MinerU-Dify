@@ -81,7 +81,7 @@ def process_file_in_mineru_env(input_bucket, input_key, file_type):
         os.makedirs(output_dir, exist_ok=True)
         
         # 使用正确的conda路径
-        conda_base = os.path.expanduser('~/miniconda')
+        conda_base = '/home/ec2-user/miniconda'
         conda_activate_cmd = f"source {conda_base}/etc/profile.d/conda.sh && conda activate mineru"
         magic_pdf_cmd = ["magic-pdf", "-p", local_file_path, "-o", output_dir, "-m", "auto"]
         
@@ -112,17 +112,27 @@ def process_file_in_mineru_env(input_bucket, input_key, file_type):
         
         logger.info(f"命令执行成功")
         
-        # 准备S3输出路径 (使用原始文件名，不带扩展名)
+        # 准备S3输出路径
         name_without_suffix = os.path.splitext(original_filename)[0]
-        output_prefix = f"Output/{name_without_suffix}/"
+        base_output_prefix = f"output/{name_without_suffix}/"
+        images_output_prefix = f"{base_output_prefix}images/"
         
         # 递归上传输出目录下所有文件到S3
         for root, dirs, files in os.walk(output_dir):
             for file in files:
                 local_path = os.path.join(root, file)
-                # 计算相对路径，以便在S3中保持相同的目录结构
+                # 计算相对路径
                 relative_path = os.path.relpath(local_path, output_dir)
-                s3_key = f"{output_prefix}{relative_path}"
+                
+                # 判断是否为图片文件
+                is_image = file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
+                
+                if is_image:
+                    # 图片文件上传到images目录
+                    s3_key = f"{images_output_prefix}{file}"
+                else:
+                    # 非图片文件上传到主目录
+                    s3_key = f"{base_output_prefix}{file}"
                 
                 logger.info(f"上传: {local_path} -> s3://{input_bucket}/{s3_key}")
                 s3_client.upload_file(local_path, input_bucket, s3_key)
@@ -139,7 +149,7 @@ def process_file_in_mineru_env(input_bucket, input_key, file_type):
                 logger.info("未找到images文件夹，创建空的images目录")
                 s3_client.put_object(
                     Bucket=input_bucket,
-                    Key=f"{output_prefix}images/"
+                    Key=images_output_prefix
                 )
         except Exception as e:
             logger.error(f"确保images目录存在时出错: {str(e)}")
