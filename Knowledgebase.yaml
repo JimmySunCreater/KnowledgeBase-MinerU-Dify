@@ -571,9 +571,11 @@ Resources:
 
           # 创建工作目录
           cd /home/ec2-user
+          # 创建日志目录
+          mkdir -p /home/ec2-user/logs
           
           # 尝试从 GitHub 下载 difyinstall.sh 脚本，如果失败则从备用源下载
-          if ! wget --timeout=20 --tries=2 --waitretry=5 https://github.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/blob/main/difyinstall.sh; then
+          if ! wget --timeout=20 --tries=2 --waitretry=5 https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/main/difyinstall.sh; then
             echo "从 GitHub 下载失败，尝试从备用源下载..."
             if ! wget --timeout=20 https://d3d2iaoi1ibop8.cloudfront.net/difyinstall.sh; then
               echo "从备用源下载失败，请检查网络连接或手动下载脚本。"
@@ -585,7 +587,8 @@ Resources:
           chmod +x difyinstall.sh
 
           # 执行安装脚本
-          sudo bash difyinstall.sh
+          sudo bash difyinstall.sh | tee -a /home/ec2-user/logs/dify_install.log
+
 
   MinerURexrothEC2:
     Type: "AWS::EC2::Instance"
@@ -630,6 +633,29 @@ Resources:
           
           # 记录磁盘空间信息以便验证
           df -h > /tmp/disk_space_after_resize.txt
+          
+          # 安装基本工具
+          sudo yum update -y
+          sudo yum install -y wget git
+          
+          # 创建日志目录
+          mkdir -p /home/ec2-user/logs
+          
+          # 下载MinerU安装脚本
+          cd /home/ec2-user
+          if ! wget --timeout=30 --tries=3 --waitretry=5 https://raw.githubusercontent.com/JimmySunCreater/KnowledgeBase-MinerU-Dify/main/mineruinstall.sh; then
+            echo "从GitHub下载MinerU安装脚本失败，尝试从备用源下载..." | tee -a /home/ec2-user/logs/install.log
+            if ! wget --timeout=30 --tries=3 --waitretry=5 https://d3d2iaoi1ibop8.cloudfront.net/mineruinstall.sh; then
+              echo "从备用源下载MinerU安装脚本失败，请检查网络连接或手动下载脚本。" | tee -a /home/ec2-user/logs/install.log
+              exit 1
+            fi
+          fi
+          
+          # 添加执行权限
+          chmod +x mineruinstall.sh
+          
+          # 执行MinerU安装脚本（不使用sudo）
+          bash mineruinstall.sh | tee -a /home/ec2-user/logs/mineru_install.log
 
   ImageServerEC2:
     Type: "AWS::EC2::Instance"
