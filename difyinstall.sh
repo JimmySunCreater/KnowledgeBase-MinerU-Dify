@@ -256,7 +256,7 @@ show_completion_info() {
     # 打印容器运行状态
     echo -e "\n${GREEN}容器运行状态:${NC}"
     if [ -d "dify/docker" ]; then
-        cd dify/docker && sudo docker-compose ps
+        sudo docker ps
     else
         print_warning "无法显示容器状态，请手动检查"
     fi
