@@ -36,7 +36,9 @@ echo "   mineru 环境创建并激活完成"
 
 # 安装 pip 和必要的 Python 包
 echo "4.1. 安装 pip 和必要的 Python 包..."
+source /home/ec2-user/miniconda/bin/activate mineru
 sudo yum install python3-pip mesa-libGL -y
+sudo pip3 install boto3 flask
 pip3 install boto3 flask
 echo "   pip 和必要的 Python 包安装完成"
 
