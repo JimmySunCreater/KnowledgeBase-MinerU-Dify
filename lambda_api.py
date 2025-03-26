@@ -89,7 +89,7 @@ def process_file_in_mineru_env(input_bucket, input_key, file_type):
         os.makedirs(output_dir, exist_ok=True)
 
         # 使用完整路径执行 magic-pdf 命令
-        magic_pdf_cmd = ["sudo", "/home/ec2-user/miniconda/envs/mineru/bin/magic-pdf", "-p", local_file_path, "-o", output_dir, "-m", "auto"]
+        magic_pdf_cmd = ["/home/ec2-user/miniconda/envs/mineru/bin/magic-pdf", "-p", local_file_path, "-o", output_dir, "-m", "auto"]
         
         # 执行命令
         full_cmd = ' '.join(magic_pdf_cmd)

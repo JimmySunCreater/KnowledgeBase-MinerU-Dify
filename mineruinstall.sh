@@ -16,6 +16,11 @@ bash ~/miniconda.sh -b -u -p /home/ec2-user/miniconda
 # 添加 conda 到当前会话的 PATH
 export PATH="/home/ec2-user/miniconda/bin:$PATH"
 
+# 确保 conda 目录权限正确
+echo "1.1. 修正 Miniconda 目录权限..."
+sudo chown -R ec2-user:ec2-user /home/ec2-user/miniconda
+echo "   Miniconda 目录权限修正完成"
+
 # 初始化 conda 并添加到 .bashrc
 echo "2. 初始化 Conda 并添加到启动项..."
 /home/ec2-user/miniconda/bin/conda init bash
@@ -34,8 +39,13 @@ conda create -n mineru python=3.10 -y
 source /home/ec2-user/miniconda/bin/activate mineru
 echo "   mineru 环境创建并激活完成"
 
+# 再次确保权限正确（环境创建后）
+echo "4.1. 再次确保权限正确..."
+sudo chown -R ec2-user:ec2-user /home/ec2-user/miniconda
+echo "   权限确认完成"
+
 # 安装 pip 和必要的 Python 包
-echo "4.1. 安装 pip 和必要的 Python 包..."
+echo "4.2. 安装 pip 和必要的 Python 包..."
 sudo yum install python3-pip mesa-libGL -y
 source /home/ec2-user/miniconda/bin/activate mineru
 pip install boto3 flask
@@ -43,7 +53,7 @@ echo "   pip 和必要的 Python 包安装完成"
 
 # 安装依赖包
 echo "5. 安装依赖包..."
-pip install -U "magic-pdf[full]" --extra-index-url https://wheels.myhloli.com -i https://mirrors.aliyuncs.com/pypi/simple
+pip install -U "magic-pdf[full]" --extra-index-url https://wheels.myhloli.com -i https://mirrors.aliyun.com/pypi/simple
 echo "   依赖包安装完成"
 
 # 安装 modelscope 并下载预训练模型
@@ -52,7 +62,7 @@ pip install modelscope
 echo "    modelscope 安装完成"
 
 echo "5.2. 下载模型下载脚本..."
-wget --timeout=30 --tries=3 --waitretry=5 https://gcore.jsdelivr.net/gh/opendatalab/MinerU@master/scripts/download_models.py -O download_models.py
+wget https://gcore.jsdelivr.net/gh/opendatalab/MinerU@master/scripts/download_models.py -O download_models.py
 echo "    下载脚本获取完成"
 
 echo "5.3. 执行模型下载..."
@@ -102,6 +112,27 @@ echo "    服务配置文件下载完成"
 echo "12. 更新服务文件中的路径..."
 sudo sed -i '/^ExecStart=/c\ExecStart=/bin/bash -c "source /home/ec2-user/miniconda/bin/activate mineru && python3 /opt/mineru_service/lambda_api.py"' /etc/systemd/system/mineru-api.service
 echo "    服务文件更新完成"
+
+# 解决 magic-pdf 命令查找问题
+echo "12.1. 确认 magic-pdf 安装路径并更新 lambda_api.py 中的命令路径..."
+MAGIC_PDF_PATH=$(find /home/ec2-user/miniconda -name "magic-pdf" | head -1)
+
+if [ -z "$MAGIC_PDF_PATH" ]; then
+    echo "    找不到 magic-pdf 可执行文件，检查是否需要修改 lambda_api.py 中的调用方式..."
+    
+    # 备份原文件
+    sudo cp /opt/mineru_service/lambda_api.py /opt/mineru_service/lambda_api.py.bak
+    
+    # 修改 lambda_api.py 使用 Python 模块直接调用而不是命令行
+    sudo sed -i 's|command = f"/home/ec2-user/miniconda/envs/mineru/bin/magic-pdf -p {input_file} -o {output_dir} -m auto"|try:\n        from magic_pdf.cli import process_pdf\n        process_pdf(input_file, output_dir=output_dir, model="auto")\n        process = None\n        returncode = 0\n    except Exception as e:\n        logging.error(f"magic-pdf执行失败: {str(e)}")\n        returncode = 1|g' /opt/mineru_service/lambda_api.py
+    
+    echo "    已修改 lambda_api.py 使用 Python 模块直接调用"
+else
+    echo "    找到 magic-pdf 路径: $MAGIC_PDF_PATH"
+    # 更新 lambda_api.py 中的路径
+    sudo sed -i "s|/home/ec2-user/miniconda/envs/mineru/bin/magic-pdf|$MAGIC_PDF_PATH|g" /opt/mineru_service/lambda_api.py
+    echo "    已更新 lambda_api.py 中的 magic-pdf 路径"
+fi
 
 # 重新加载 systemd 配置
 echo "13. 重新加载 systemd 配置..."
