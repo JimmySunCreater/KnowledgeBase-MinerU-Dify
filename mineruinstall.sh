@@ -100,7 +100,7 @@ echo "    服务配置文件下载完成"
 
 # 更新服务文件以使用完整路径
 echo "12. 更新服务文件中的路径..."
-sudo sed -i "s|ExecStart=.*|ExecStart=/home/ec2-user/miniconda/bin/conda run -n mineru python3 /opt/mineru_service/lambda_api.py|g" /etc/systemd/system/mineru-api.service
+sudo sed -i '/^ExecStart=/c\ExecStart=/bin/bash -c "source /home/ec2-user/miniconda/bin/activate mineru && python3 /opt/mineru_service/lambda_api.py"' /etc/systemd/system/mineru-api.service
 echo "    服务文件更新完成"
 
 # 重新加载 systemd 配置
