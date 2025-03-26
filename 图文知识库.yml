@@ -1,0 +1,1154 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: 图文知识库
+  use_icon_as_answer_icon: true
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/bedrock:0.0.9@4484b4097187376df28408110fa951c64a18588689746ed4eefc4ee4dc3ec9f2
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/google:0.0.8@3efcf55ffeef9d0f77715e0afb23534952ae0cb385c051d0637e86d71199d1a6
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types:
+      - document
+      - image
+      allowed_file_upload_methods:
+      - remote_url
+      - local_file
+      enabled: true
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 1
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1740449508729-source-llm-target
+      source: '1740449508729'
+      sourceHandle: source
+      target: llm
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 1741012790581-true-1741103366720-target
+      source: '1741012790581'
+      sourceHandle: 'true'
+      target: '1741103366720'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 1741012790581-false-1741103417271-target
+      source: '1741012790581'
+      sourceHandle: 'false'
+      target: '1741103417271'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: question-classifier
+      id: 1740449493145-source-1742038028561-target
+      source: '1740449493145'
+      sourceHandle: source
+      target: '1742038028561'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: knowledge-retrieval
+      id: 1742038028561-1-1740449508729-target
+      source: '1742038028561'
+      sourceHandle: '1'
+      target: '1740449508729'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: tool
+      id: 1742038028561-2-1742038108696-target
+      source: '1742038028561'
+      sourceHandle: '2'
+      target: '1742038108696'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: tool
+        targetType: code
+      id: 1742038108696-source-1742199708634-target
+      source: '1742038108696'
+      sourceHandle: source
+      target: '1742199708634'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: tool
+      id: 1742199708634-source-1742199870791-target
+      source: '1742199708634'
+      sourceHandle: source
+      target: '1742199870791'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: tool
+        targetType: code
+      id: 1742199870791-source-1742199923573-target
+      source: '1742199870791'
+      sourceHandle: source
+      target: '1742199923573'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: template-transform
+      id: 1742199923573-source-1742200103305-target
+      source: '1742199923573'
+      sourceHandle: source
+      target: '1742200103305'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: template-transform
+        targetType: llm
+      id: 1742200103305-source-1742200037388-target
+      source: '1742200103305'
+      sourceHandle: source
+      target: '1742200037388'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1742200037388-source-1742200619288-target
+      source: '1742200037388'
+      sourceHandle: source
+      target: '1742200619288'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1742038028561-1742203183190-1742207221669-target
+      source: '1742038028561'
+      sourceHandle: '1742203183190'
+      target: '1742207221669'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: tool
+      id: 1742207221669-source-1742203170006-target
+      source: '1742207221669'
+      sourceHandle: source
+      target: '1742203170006'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: tool
+        targetType: code
+      id: 1742203170006-source-1742207949624-target
+      source: '1742203170006'
+      sourceHandle: source
+      target: '1742207949624'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: answer
+      id: 1742207949624-source-1742203388252-target
+      source: '1742207949624'
+      sourceHandle: source
+      target: '1742203388252'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: code
+      id: llm-source-1742208775591-target
+      source: llm
+      sourceHandle: source
+      target: '1742208775591'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: if-else
+      id: 1742208775591-source-1741012790581-target
+      source: '1742208775591'
+      sourceHandle: source
+      target: '1741012790581'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - allowed_file_extensions: []
+          allowed_file_types:
+          - image
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          label: Web搜索
+          max_length: 5
+          options:
+          - 启用
+          - 关闭
+          required: true
+          type: select
+          variable: WebSearch
+      height: 90
+      id: '1740449493145'
+      position:
+        x: -470.8965629471833
+        y: 377.49545376982365
+      positionAbsolute:
+        x: -470.8965629471833
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1740449508729'
+          - result
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+          provider: langgenius/bedrock/bedrock
+        prompt_template:
+        - id: d7287098-66ad-4627-897f-bf630ebce12c
+          role: system
+          text: '注意,请将模型输出内容严格按照以下格式输出:
+
+            ##输出要求
+
+            -如果输出的内容包含图片URL,请使用以下JSON格式输
+
+            出:
+
+            {
+
+            "Content":"示例输出内容",
+
+            "URL":"![](图片地址)"
+
+            }
+
+            3.如果输出的内容不包含图片URL,请使用以下JSON格式
+
+            输出:
+
+            {
+
+            "Content":"示例输出内容"
+
+            }
+
+            注意：输出的URL直接使用{{#context#}}中的图片地址（jepg、png 等图片格式），URL 必须为 http或 https，如果不是，则没有
+            URL。不能使用大模型自己存储的图片地址。'
+        selected: false
+        title: 大模型总结分析
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: llm
+      position:
+        x: 506.1026327592515
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 506.1026327592515
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - 153b6e2e-2fed-42e6-b6fd-4862f1e560ee
+        desc: ''
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: amazon.rerank-v1:0
+            provider: langgenius/bedrock/bedrock
+          score_threshold: null
+          top_k: 4
+        query_variable_selector:
+        - '1740449493145'
+        - sys.query
+        retrieval_mode: multiple
+        selected: false
+        title: 知识检索
+        type: knowledge-retrieval
+      height: 92
+      id: '1740449508729'
+      position:
+        x: 213.56253689168784
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 213.56253689168784
+        y: 377.49545376982365
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: empty
+            id: 2002e062-404b-49b4-8245-cfb6c1944e90
+            value: ''
+            varType: string
+            variable_selector:
+            - '1742208775591'
+            - URL
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 条件分支
+        type: if-else
+      height: 126
+      id: '1741012790581'
+      position:
+        x: 1103.879837855263
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 1103.879837855263
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1742208775591.Content#}}'
+        desc: ''
+        selected: false
+        title: 文本回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1741103366720'
+      position:
+        x: 1421.1056098127888
+        y: 303.54471184229936
+      positionAbsolute:
+        x: 1421.1056098127888
+        y: 303.54471184229936
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1742208775591.Content#}}
+
+          {{#1742208775591.URL#}}'
+        desc: ''
+        selected: false
+        title: 图文回复
+        type: answer
+        variables: []
+      height: 123
+      id: '1741103417271'
+      position:
+        x: 1421.1056098127888
+        y: 457.38782145469656
+      positionAbsolute:
+        x: 1421.1056098127888
+        y: 457.38782145469656
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        classes:
+        - id: '1'
+          name: Roxroth相关（液压、电子传动与控制、齿轮、线性传动及组装技术）、智能驾驶相关、 Autosar的问题。
+        - id: '2'
+          name: 实时性的问题。如天气、日期、股票等
+        - id: '1742203183190'
+          name: 生成图片的问题。对生成图片的内容进行细化描述。
+        desc: ''
+        instructions: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: us.amazon.nova-pro-v1:0
+          provider: langgenius/bedrock/bedrock
+        query_variable_selector:
+        - '1740449493145'
+        - sys.query
+        selected: false
+        title: 问题分类器
+        topics: []
+        type: question-classifier
+        vision:
+          enabled: false
+      height: 258
+      id: '1742038028561'
+      position:
+        x: -124.580944363705
+        y: 377.49545376982365
+      positionAbsolute:
+        x: -124.580944363705
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        provider_id: google
+        provider_name: google
+        provider_type: builtin
+        selected: false
+        title: 谷歌搜索
+        tool_configurations: {}
+        tool_label: 谷歌搜索
+        tool_name: google_search
+        tool_parameters:
+          query:
+            type: mixed
+            value: '{{#sys.query#}}'
+        type: tool
+      height: 54
+      id: '1742038108696'
+      position:
+        x: 213.56253689168784
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 213.56253689168784
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(search_results) -> dict:\n    return {\n        \"title\"\
+          \ : search_results[0]['organic_results'][1].get('title'),\n        \"url\"\
+          : search_results[0]['organic_results'][1].get('link'),\n        \"snippet\"\
+          \ : search_results[0]['organic_results'][1].get('snippet')\n    }\n\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          snippet:
+            children: null
+            type: string
+          title:
+            children: null
+            type: string
+          url:
+            children: null
+            type: string
+        selected: false
+        title: Search
+        type: code
+        variables:
+        - value_selector:
+          - '1742038108696'
+          - json
+          variable: search_results
+      height: 54
+      id: '1742199708634'
+      position:
+        x: 506.1026327592515
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 506.1026327592515
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        is_team_authorization: true
+        output_schema: null
+        paramSchemas:
+        - auto_generate: null
+          default: null
+          form: llm
+          human_description:
+            en_US: used for linking to webpages
+            ja_JP: used for linking to webpages
+            pt_BR: used for linking to webpages
+            zh_Hans: 用于链接到网页
+          label:
+            en_US: URL
+            ja_JP: URL
+            pt_BR: URL
+            zh_Hans: 网页链接
+          llm_description: url for scraping
+          max: null
+          min: null
+          name: url
+          options: []
+          placeholder: null
+          precision: null
+          required: true
+          scope: null
+          template: null
+          type: string
+        - auto_generate: null
+          default: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
+            like Gecko) Chrome/100.0.1000.0 Safari/537.36
+          form: form
+          human_description:
+            en_US: used for identifying the browser.
+            ja_JP: used for identifying the browser.
+            pt_BR: used for identifying the browser.
+            zh_Hans: 用于识别浏览器。
+          label:
+            en_US: User Agent
+            ja_JP: User Agent
+            pt_BR: User Agent
+            zh_Hans: User Agent
+          llm_description: null
+          max: null
+          min: null
+          name: user_agent
+          options: []
+          placeholder: null
+          precision: null
+          required: false
+          scope: null
+          template: null
+          type: string
+        - auto_generate: null
+          default: 'false'
+          form: form
+          human_description:
+            en_US: If true, the crawler will only return the page summary content.
+            ja_JP: If true, the crawler will only return the page summary content.
+            pt_BR: If true, the crawler will only return the page summary content.
+            zh_Hans: 如果启用，爬虫将仅返回页面摘要内容。
+          label:
+            en_US: Whether to generate summary
+            ja_JP: Whether to generate summary
+            pt_BR: Whether to generate summary
+            zh_Hans: 是否生成摘要
+          llm_description: null
+          max: null
+          min: null
+          name: generate_summary
+          options:
+          - label:
+              en_US: 'Yes'
+              ja_JP: 'Yes'
+              pt_BR: 'Yes'
+              zh_Hans: 是
+            value: 'true'
+          - label:
+              en_US: 'No'
+              ja_JP: 'No'
+              pt_BR: 'No'
+              zh_Hans: 否
+            value: 'false'
+          placeholder: null
+          precision: null
+          required: false
+          scope: null
+          template: null
+          type: boolean
+        params:
+          generate_summary: ''
+          url: ''
+          user_agent: ''
+        provider_id: webscraper
+        provider_name: webscraper
+        provider_type: builtin
+        selected: false
+        title: 网页爬虫
+        tool_configurations:
+          generate_summary: null
+          user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+            (KHTML, like Gecko) Chrome/100.0.1000.0 Safari/537.36
+        tool_label: 网页爬虫
+        tool_name: webscraper
+        tool_parameters:
+          url:
+            type: mixed
+            value: '{{#1742199708634.url#}}'
+        type: tool
+      height: 116
+      id: '1742199870791'
+      position:
+        x: 819.3927766477125
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 819.3927766477125
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(crawl_result) -> str:\n    idx = crawl_result.find(\"TEXT:\\\
+          n\\n\")\n    start_idx = idx + len(\"TEXT:\\n\\n\")\n    return {\n    \
+          \    \"result\" : crawl_result[start_idx:8192]\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 内容处理
+        type: code
+        variables:
+        - value_selector:
+          - '1742199870791'
+          - text
+          variable: crawl_result
+      height: 54
+      id: '1742199923573'
+      position:
+        x: 1103.879837855263
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 1103.879837855263
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: us.deepseek.r1-v1:0
+          provider: langgenius/bedrock/bedrock
+        prompt_template:
+        - id: 92169b09-cb0b-4b8d-a4a8-2397b62c7f06
+          role: system
+          text: 请参考提供搜索的内容回答问题
+        - id: cbc89ca2-e5c1-4186-b8c4-02925b99782b
+          role: user
+          text: '<search_result>
+
+            [
+
+            {{#1742200103305.output#}}
+
+            ]
+
+            </search_result>
+
+
+            ## Answer Format Example
+
+            $PLACEHOLDER_ANSWER$
+
+
+            参考链接：
+
+            1. [Title](URL)
+
+            2. [Title](URL)
+
+            ...
+
+
+            ## Requirement：
+
+            1. 有些候选答案可能由于网页403无法获取的原因，无法直接回答， 忽略这些即可。
+
+            2. 直接给出回答，不用透露你综合了多个答案。
+
+            3. 如果采用了某搜索结果的内容，在Refernce部分按照序号，按照序号输出这个URL，以markdown的格式，如[title](url)。
+
+            4. 如果搜索结果中的Title过于冗长，直接输出URL也可以
+
+
+            {{#sys.query#}}'
+        selected: false
+        title: LLM 3
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '1742200037388'
+      position:
+        x: 1725.9635712570375
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 1725.9635712570375
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        template: "{\n    \"Title\" : {{ title }},\n    \"URL\" : {{ url }},\n   \
+          \ \"snippet\" : {{ snippet }},\n    \"content\" : {{ content }}\n}"
+        title: 模板转换
+        type: template-transform
+        variables:
+        - value_selector:
+          - '1742199923573'
+          - result
+          variable: content
+        - value_selector:
+          - '1742199708634'
+          - url
+          variable: url
+        - value_selector:
+          - '1742199708634'
+          - title
+          variable: title
+        - value_selector:
+          - '1742199708634'
+          - snippet
+          variable: snippet
+      height: 54
+      id: '1742200103305'
+      position:
+        x: 1421.1056098127888
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 1421.1056098127888
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1742200037388.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复 4
+        type: answer
+        variables: []
+      height: 105
+      id: '1742200619288'
+      position:
+        x: 2038.043509402879
+        y: 628.0038561129367
+      positionAbsolute:
+        x: 2038.043509402879
+        y: 628.0038561129367
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        is_team_authorization: true
+        output_schema: null
+        paramSchemas:
+        - auto_generate: null
+          default: null
+          form: llm
+          human_description:
+            en_US: 用于生成图像的文本描述
+            ja_JP: 用于生成图像的文本描述
+            pt_BR: 用于生成图像的文本描述
+            zh_Hans: 用于生成图像的文本描述
+          label:
+            en_US: prompt
+            ja_JP: prompt
+            pt_BR: prompt
+            zh_Hans: prompt
+          llm_description: 用于生成图像的文本描述
+          max: null
+          min: null
+          name: prompt
+          options: []
+          placeholder: null
+          precision: null
+          required: true
+          scope: null
+          template: null
+          type: string
+        - auto_generate: null
+          default: null
+          form: llm
+          human_description:
+            en_US: 不希望出现在图像中的元素描述
+            ja_JP: 不希望出现在图像中的元素描述
+            pt_BR: 不希望出现在图像中的元素描述
+            zh_Hans: 不希望出现在图像中的元素描述
+          label:
+            en_US: negative_prompt
+            ja_JP: negative_prompt
+            pt_BR: negative_prompt
+            zh_Hans: negative_prompt
+          llm_description: 不希望出现在图像中的元素描述
+          max: null
+          min: null
+          name: negative_prompt
+          options: []
+          placeholder: null
+          precision: null
+          required: false
+          scope: null
+          template: null
+          type: string
+        - auto_generate: null
+          default: '16:9'
+          form: llm
+          human_description:
+            en_US: 图像的宽高比
+            ja_JP: 图像的宽高比
+            pt_BR: 图像的宽高比
+            zh_Hans: 图像的宽高比
+          label:
+            en_US: aspect_ratio
+            ja_JP: aspect_ratio
+            pt_BR: aspect_ratio
+            zh_Hans: aspect_ratio
+          llm_description: 图像的宽高比
+          max: null
+          min: null
+          name: aspect_ratio
+          options: []
+          placeholder: null
+          precision: null
+          required: false
+          scope: null
+          template: null
+          type: string
+        - auto_generate: null
+          default: 0
+          form: llm
+          human_description:
+            en_US: 用于图像生成的随机种子
+            ja_JP: 用于图像生成的随机种子
+            pt_BR: 用于图像生成的随机种子
+            zh_Hans: 用于图像生成的随机种子
+          label:
+            en_US: seed
+            ja_JP: seed
+            pt_BR: seed
+            zh_Hans: seed
+          llm_description: 用于图像生成的随机种子
+          max: null
+          min: null
+          name: seed
+          options: []
+          placeholder: null
+          precision: null
+          required: false
+          scope: null
+          template: null
+          type: number
+        params:
+          aspect_ratio: ''
+          negative_prompt: ''
+          prompt: ''
+          seed: ''
+        provider_id: 715cc6d8-6c5e-4319-b114-10b886b3ce65
+        provider_name: image_generator
+        provider_type: api
+        selected: false
+        title: generateImage
+        tool_configurations: {}
+        tool_label: generateImage
+        tool_name: generateImage
+        tool_parameters:
+          aspect_ratio:
+            type: mixed
+            value: '16:9'
+          negative_prompt:
+            type: mixed
+            value: ''
+          prompt:
+            type: mixed
+            value: '{{#1742207221669.text#}}'
+          seed:
+            type: constant
+            value: 0
+        type: tool
+      height: 54
+      id: '1742203170006'
+      position:
+        x: 506.1026327592515
+        y: 830.367818730292
+      positionAbsolute:
+        x: 506.1026327592515
+        y: 830.367818730292
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: "您希望生成{{#sys.query#}},图片如下： \n  ![Generated Image]({{#1742207949624.image_url#}})"
+        desc: ''
+        selected: false
+        title: 直接回复 4
+        type: answer
+        variables: []
+      height: 139
+      id: '1742203388252'
+      position:
+        x: 1103.879837855263
+        y: 830.367818730292
+      positionAbsolute:
+        x: 1103.879837855263
+        y: 830.367818730292
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+          provider: langgenius/bedrock/bedrock
+        prompt_template:
+        - id: 8ffb82ee-3fa7-4521-b56c-d1084f699f3f
+          role: system
+          text: '帮我将{{#sys.query#}}描述的图片进行细化描述，然后转换为英文输出。
+
+            输出格式：仅输出图片描述，不用输出其他说明。'
+        - id: 33f3a644-cd07-40ff-a502-fe3dfb32547a
+          role: user
+          text: '{{#sys.query#}}'
+        selected: false
+        title: 图片描述
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '1742207221669'
+      position:
+        x: 213.56253689168784
+        y: 830.367818730292
+      positionAbsolute:
+        x: 213.56253689168784
+        y: 830.367818730292
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\ndef main(response) -> dict:\n    try:\n        # 打印调试信息\n\
+          \        print(f\"Response type: {type(response)}\")\n        print(f\"\
+          Response content: {response}\")\n        \n        # 尝试解析响应\n        if\
+          \ isinstance(response, str):\n            # 如果是字符串，尝试解析JSON\n          \
+          \  data = json.loads(response)\n        elif isinstance(response, dict):\n\
+          \            # 如果已经是字典，直接使用\n            data = response\n        else:\n\
+          \            # 其他类型，转为字符串再解析\n            data = json.loads(str(response))\n\
+          \            \n        # 尝试获取图片URL\n        if isinstance(data, dict) and\
+          \ \"image_url\" in data:\n            image_url = data[\"image_url\"]\n\
+          \        elif isinstance(data, dict) and \"text\" in data:\n           \
+          \ # 如果有嵌套的text字段，尝试解析\n            inner_data = json.loads(data[\"text\"\
+          ])\n            image_url = inner_data.get(\"image_url\", \"\")\n      \
+          \  else:\n            image_url = \"\"\n            \n        return {\n\
+          \            \"image_url\": image_url\n        }\n    except Exception as\
+          \ e:\n        print(f\"Error processing: {str(e)}\")\n        return {\n\
+          \            \"image_url\": f\"Error: {str(e)}\"\n        }"
+        code_language: python3
+        desc: ''
+        outputs:
+          image_url:
+            children: null
+            type: string
+        selected: false
+        title: 代码执行 3
+        type: code
+        variables:
+        - value_selector:
+          - '1742203170006'
+          - text
+          variable: response
+      height: 54
+      id: '1742207949624'
+      position:
+        x: 808.3553557611376
+        y: 830.367818730292
+      positionAbsolute:
+        x: 808.3553557611376
+        y: 830.367818730292
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\ndef main(llm_output) -> dict:\n    try:\n        # 检查输入类型并处理\n\
+          \        if isinstance(llm_output, dict) and \"text\" in llm_output:\n \
+          \           json_str = llm_output[\"text\"]\n        elif isinstance(llm_output,\
+          \ str):\n            json_str = llm_output\n        else:\n            return\
+          \ {\"Content\": \"无效的输入格式\", \"URL\": \"\"}\n        \n        # 解析JSON字符串\n\
+          \        parsed_data = json.loads(json_str)\n        \n        # 提取Content和URL\n\
+          \        content = parsed_data.get(\"Content\", \"\")\n        url = parsed_data.get(\"\
+          URL\", \"\")\n        \n        # 保持原始格式返回\n        return {\n         \
+          \   \"Content\": content,\n            \"URL\": url\n        }\n    except\
+          \ Exception as e:\n        return {\n            \"Content\": f\"处理异常: {str(e)}\"\
+          ,\n            \"URL\": \"\"\n        }"
+        code_language: python3
+        desc: ''
+        outputs:
+          Content:
+            children: null
+            type: string
+          URL:
+            children: null
+            type: string
+        selected: false
+        title: 图片及内容提取
+        type: code
+        variables:
+        - value_selector:
+          - llm
+          - text
+          variable: llm_output
+      height: 54
+      id: '1742208775591'
+      position:
+        x: 808.3553557611376
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 808.3553557611376
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: -604.152843372182
+      y: 119.31162454914124
+      zoom: 0.6928578553362221
