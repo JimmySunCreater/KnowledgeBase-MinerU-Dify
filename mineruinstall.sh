@@ -36,13 +36,13 @@ echo "   mineru 环境创建并激活完成"
 
 # 安装 pip 和必要的 Python 包
 echo "4.1. 安装 pip 和必要的 Python 包..."
-sudo yum install python3-pip -y
+sudo yum install python3-pip mesa-libGL -y
 sudo pip3 install boto3 flask
 echo "   pip 和必要的 Python 包安装完成"
 
 # 安装依赖包
 echo "5. 安装依赖包..."
-pip install -U "magic-pdf[full]" --extra-index-url https://wheels.myhloli.com -i https://mirrors.aliyun.com/pypi/simple
+pip install -U "magic-pdf[full]" --extra-index-url https://wheels.myhloli.com -i https://mirrors.aliyuncs.com/pypi/simple
 echo "   依赖包安装完成"
 
 # 安装 modelscope 并下载预训练模型
