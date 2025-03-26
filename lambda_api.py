@@ -12,6 +12,12 @@ import datetime
 import re
 import queue
 
+# 创建日志目录并设置权限
+log_dir = '/home/ec2-user/logs'
+os.makedirs(log_dir, exist_ok=True)
+subprocess.run(['sudo', 'chown', '-R', 'ec2-user:ec2-user', log_dir], check=True)
+subprocess.run(['sudo', 'chmod', '755', log_dir], check=True)
+
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
@@ -275,26 +281,6 @@ def convert_file():
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "message": "服务运行正常"})
-
-# 使用正则表达式查找并替换图片引用 - 完全替换为纯 URL
-pattern = r'!\[.*?\]\(images/(.*?)\)'
-
-def replace_image_url(match):
-    # 只需要图片名称
-    image_name = match.group(1)
-    
-    # 构建 URL，不需要加 output 路径，因为 Nginx 已经将 root 指向了 output 目录
-    # 对路径进行 URL 编码，但保留斜杠
-    encoded_path = urllib.parse.quote(folder_path, safe='/')
-    # 移除路径中的 output/ 前缀（如果存在）
-    if encoded_path.startswith('output/'):
-        encoded_path = encoded_path[7:]  # 移除 'output/' 前缀
-    cloudfront_url = f"http://{NGINX_DOMAIN}/{encoded_path}/images/{image_name}"
-    
-    return cloudfront_url
-
-# 应用替换
-modified_content = re.sub(pattern, replace_image_url, content)
 
 if __name__ == '__main__':
     # 启动队列工作线程
