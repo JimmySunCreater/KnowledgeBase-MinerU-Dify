@@ -1,0 +1,369 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: 图文知识库
+  use_icon_as_answer_icon: true
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/bedrock:0.0.9@4484b4097187376df28408110fa951c64a18588689746ed4eefc4ee4dc3ec9f2
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - remote_url
+      - local_file
+      enabled: true
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 1
+    opening_statement: '您好!我是博世力士乐(Rexroth)智能售后助手。很高兴为您服务!
+
+
+      我可以为您提供以下帮助:
+
+
+      产品技术支持与故障诊断
+
+      备件查询与订购信息
+
+      维修服务咨询
+
+      产品手册与技术文档获取
+
+      最近维修网点查询
+
+      请问您需要哪方面的帮助?您也可以直接描述您遇到的问题,我会竭诚为您解答。'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: knowledge-retrieval
+      id: 1740449493145-source-1740449508729-target
+      source: '1740449493145'
+      sourceHandle: source
+      target: '1740449508729'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1740449508729-source-llm-target
+      source: '1740449508729'
+      sourceHandle: source
+      target: llm
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: parameter-extractor
+      id: llm-source-1741012577382-target
+      source: llm
+      sourceHandle: source
+      target: '1741012577382'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: parameter-extractor
+        targetType: if-else
+      id: 1741012577382-source-1741012790581-target
+      source: '1741012577382'
+      sourceHandle: source
+      target: '1741012790581'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 1741012790581-true-1741103366720-target
+      source: '1741012790581'
+      sourceHandle: 'true'
+      target: '1741103366720'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: answer
+      id: 1741012790581-false-1741103417271-target
+      source: '1741012790581'
+      sourceHandle: 'false'
+      target: '1741103417271'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables: []
+      height: 54
+      id: '1740449493145'
+      position:
+        x: -75.60873010125061
+        y: 377.49545376982365
+      positionAbsolute:
+        x: -75.60873010125061
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1740449508729'
+          - result
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            temperature: 0
+          mode: chat
+          name: us.deepseek.r1-v1:0
+          provider: langgenius/bedrock/bedrock
+        prompt_template:
+        - id: d7287098-66ad-4627-897f-bf630ebce12c
+          role: system
+          text: "注意,请将模型输出内容严格按照以下格式输出:\n输出语言：中文\n输出要求\n1.当输出内容包含图片URL时，请按照以下 JSON\
+            \ 格式输出：\n{\n  \"Content\": \"输出内容\",\n  \"URL\": \"![图片描述](图片地址)\"\n}\n\
+            2.若存在多张图片，则按照以下规则类推：\n{\n  \"Content\": \"输出内容\",\n  \"URL\": \"![图片1描述](图片地址1)![图片2描述](图片地址2)![图片3描述](图片地址3)\"\
+            \n}\n3.当输出内容不包含图片URL时，请按照以下 JSON 格式输出：\n{\n  \"Content\": \"输出内容\"\n}\n\
+            注意：\n输出的URL直接使用{{#context#}}中的图片地址（仅限 jpeg、png 等图片格式），且URL必须为 http 或 https\
+            \ 协议。如果不是，则不输出 URL。\n如果{{#context#}}中没有图片地址，则不输出 URL。\n不能使用大模型自己生成的图片地址。"
+        selected: false
+        title: 大模型总结分析
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: llm
+      position:
+        x: 506.1026327592515
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 506.1026327592515
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - f6b8de2f-aa7b-4439-9221-6c7adc14f0bb
+        - cb57fef2-0b38-4c00-b58b-70b280e707ea
+        desc: ''
+        multiple_retrieval_config:
+          reranking_enable: false
+          reranking_mode: weighted_score
+          reranking_model:
+            model: cohere.rerank-v3-5:0
+            provider: langgenius/bedrock/bedrock
+          score_threshold: null
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0.3
+            vector_setting:
+              embedding_model_name: amazon.titan-embed-text-v2:0
+              embedding_provider_name: langgenius/bedrock/bedrock
+              vector_weight: 0.7
+        query_variable_selector:
+        - '1740449493145'
+        - sys.query
+        retrieval_mode: multiple
+        selected: false
+        title: 知识检索
+        type: knowledge-retrieval
+      height: 92
+      id: '1740449508729'
+      position:
+        x: 213.56253689168784
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 213.56253689168784
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        instruction: '{{#llm.text#}}中URL 输入格式为 "URL":"![图片描述](图片地址)"，严格按照格式提取参数 URL=![图片描述](图片地址)，不能只提取网址'
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+          provider: langgenius/bedrock/bedrock
+        parameters:
+        - description: 图片 url
+          name: URL
+          required: false
+          type: string
+        - description: 大模型输出
+          name: Content
+          required: false
+          type: string
+        query:
+        - llm
+        - text
+        reasoning_mode: prompt
+        selected: false
+        title: 参数提取器
+        type: parameter-extractor
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: false
+      height: 90
+      id: '1741012577382'
+      position:
+        x: 806.5628211486298
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 806.5628211486298
+        y: 377.49545376982365
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: empty
+            id: 2002e062-404b-49b4-8245-cfb6c1944e90
+            value: ''
+            varType: string
+            variable_selector:
+            - '1741012577382'
+            - URL
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 条件分支
+        type: if-else
+      height: 126
+      id: '1741012790581'
+      position:
+        x: 1103.879837855263
+        y: 377.49545376982365
+      positionAbsolute:
+        x: 1103.879837855263
+        y: 377.49545376982365
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1741012577382.Content#}}'
+        desc: ''
+        selected: false
+        title: 文本回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1741103366720'
+      position:
+        x: 1421.1056098127888
+        y: 303.54471184229936
+      positionAbsolute:
+        x: 1421.1056098127888
+        y: 303.54471184229936
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1741012577382.Content#}}
+
+          {{#1741012577382.URL#}}'
+        desc: ''
+        selected: false
+        title: 图文回复
+        type: answer
+        variables: []
+      height: 123
+      id: '1741103417271'
+      position:
+        x: 1421.1056098127888
+        y: 498.4477996724022
+      positionAbsolute:
+        x: 1421.1056098127888
+        y: 498.4477996724022
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 205.64877902753187
+      y: 67.62232217708355
+      zoom: 0.557869283539775
